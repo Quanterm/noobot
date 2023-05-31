@@ -1,58 +1,37 @@
 import random
 
-# Begrüßungsnachrichten mit Hilfstexten
-GREETING_INPUTS = ["hallo", "guten tag", "hi", "hey"]
-GREETING_RESPONSES = [
-    "Hallo! Wie kann ich Ihnen helfen? Hier sind einige Beispiele, wie ich Ihnen helfen kann:\n"
-    "1. Passwort zurücksetzen\n"
-    "2. Probleme mit der Internetverbindung\n"
-    "3. Druckerprobleme\n"
-    "4. E-Mail-Probleme\n"
-    "5. Fragen zu Ihrem Benutzerkonto",
-    "Guten Tag! Wie kann ich Ihnen behilflich sein? Hier sind einige Beispiele, wie ich Ihnen helfen kann:\n"
-    "1. Passwort zurücksetzen\n"
-    "2. Probleme mit der Internetverbindung\n"
-    "3. Druckerprobleme\n"
-    "4. E-Mail-Probleme\n"
-    "5. Fragen zu Ihrem Benutzerkonto",
-    "Hi! Wie kann ich Ihnen weiterhelfen? Hier sind einige Beispiele, wie ich Ihnen helfen kann:\n"
-    "1. Passwort zurücksetzen\n"
-    "2. Probleme mit der Internetverbindung\n"
-    "3. Druckerprobleme\n"
-    "4. E-Mail-Probleme\n"
-    "5. Fragen zu Ihrem Benutzerkonto",
-    "Hey! Was kann ich für Sie tun? Hier sind einige Beispiele, wie ich Ihnen helfen kann:\n"
-    "1. Passwort zurücksetzen\n"
-    "2. Probleme mit der Internetverbindung\n"
-    "3. Druckerprobleme\n"
-    "4. E-Mail-Probleme\n"
-    "5. Fragen zu Ihrem Benutzerkonto"
-]
+# Begrüßungsnachrichten des Chatbots
+greetings = ["Hallo! Wie kann ich Ihnen heute helfen?", "Guten Tag! Wie kann ich Ihnen behilflich sein?", "Willkommen beim IT-Support! Wie kann ich Ihnen weiterhelfen?"]
 
-# Standardantwort, wenn der Bot die Eingabe nicht versteht
-DEFAULT_RESPONSE = "Entschuldigung, ich habe das nicht verstanden. Könnten Sie Ihre Frage bitte anders formulieren?"
+# Antworten des Chatbots
+responses = {
+    "Passwort vergessen": "Kein Problem! Ich werde Ihnen helfen, Ihr Passwort zurückzusetzen. Bitte geben Sie Ihren Benutzernamen an.",
+    "Druckerproblem": "Welches Problem haben Sie mit dem Drucker? Bitte beschreiben Sie es genauer.",
+    "Internetverbindung langsam": "Ich verstehe, dass Ihre Internetverbindung langsam ist. Wir werden uns darum kümmern. Können Sie bitte Ihre IP-Adresse angeben?",
+    "Softwareinstallation": "Gerne unterstütze ich Sie bei der Softwareinstallation. Bitte geben Sie den Namen der Software an, die Sie installieren möchten.",
+    "Netzwerkproblem": "Bei Netzwerkproblemen kann ich Ihnen helfen. Welches konkrete Problem haben Sie mit Ihrem Netzwerk?",
+    "Email-Konfiguration": "Um Ihre E-Mail-Konfiguration zu überprüfen, benötige ich Ihren E-Mail-Anbieter (z. B. Gmail, Outlook) und Ihren Benutzernamen.",
+    "Danke": "Gern geschehen! Wenn Sie weitere Fragen haben, stehe ich Ihnen gerne zur Verfügung."
+}
 
-# Funktion zur Begrüßung des Benutzers
-def greet():
-    return random.choice(GREETING_RESPONSES)
+# Funktion zur Verarbeitung der Eingabe und Generierung der Antwort
+def process_input(user_input):
+    for key in responses:
+        if key.lower() in user_input.lower():
+            return responses[key]
+    return "Entschuldigung, aber ich konnte Ihre Anfrage nicht verstehen. Bitte wählen Sie eine der folgenden Optionen: Passwort vergessen, Druckerproblem, Internetverbindung langsam, Softwareinstallation, Netzwerkproblem, Email-Konfiguration."
 
-# Funktion zur Verarbeitung der Eingabe des Benutzers
-def get_response(user_input):
-    if user_input.lower() in GREETING_INPUTS:
-        return greet()
-    elif "passwort" in user_input.lower() and "zurücksetzen" in user_input.lower():
-        return "Um Ihr Passwort zurückzusetzen, folgen Sie bitte diesen Schritten:\n1. Besuchen Sie die Website 'www.example.com'.\n2. Klicken Sie auf 'Passwort vergessen'.\n3. Geben Sie Ihre E-Mail-Adresse ein, mit der Sie sich registriert haben.\n4. Überprüfen Sie Ihre E-Mails und folgen Sie den Anweisungen, um Ihr Passwort zurückzusetzen."
-    elif user_input.lower() == "hilfe":
-        return greet()
-    else:
-        return DEFAULT_RESPONSE
+# Hauptfunktion des Chatbots
+def chatbot():
+    print(random.choice(greetings))
+    
+    while True:
+        user_input = input("> ")
+        if user_input.lower() == "exit":
+            break
+        else:
+            response = process_input(user_input)
+            print(response)
 
-# Haupt-Chatbot-Schleife
-print("Willkommen beim IT-Support-Chatbot. Wie kann ich Ihnen helfen?")
-while True:
-    user_input = input("> ")
-    if user_input.lower() == "beenden":
-        print("Auf Wiedersehen!")
-        break
-    response = get_response(user_input)
-    print(response)
+# Chatbot starten
+chatbot()
