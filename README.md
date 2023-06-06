@@ -8,6 +8,6 @@ The bot collects the data from the chat of them for the next common issue.
 ## System Requirments
 - Debian GNU/Linux (11 Bullseye)
 - Hardware Specs: 1 GB Ram, 1 Core, 10GB Storage
-- python3-pip (Requiered pkgs in [docs](https://github.com/Quanterm/noobot/tree/main/docs)
+- python3-pip (Requiered pkgs in [docs](https://github.com/Quanterm/noobot/tree/main/docs))
 
 
