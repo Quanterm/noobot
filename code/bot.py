@@ -7,9 +7,10 @@ import os
 from dotenv import load_dotenv
 import json 
 # Für die Datenbank und Extra Antworten
-#import sqlite3
-# Lan
-#import spacy
+# import sqlite3
+# from flair.data import Sentence
+# from flair.models import TextClassifier
+# Vor Trainierter Text Classifier
 
 #Liste aller benötigten Tokens für adressierte Steuerung
 load_dotenv(dotenv_path='./env.env')
@@ -26,17 +27,6 @@ intents.members = True
 intents.messages = True
 # Für Privater Thread mit User 
 bot = commands.Bot(command_prefix='!', intents = intents, privileged_intents=True)
-"""
-# Für die Datensammliung vom Menschlichen Support
-connection = sqlite3.connect('chat_database.db')
-
-# Object erstellung für die Datenbank
-cursor = connection.cursor()
-
-# SQl Befehle für die Erstellung der Datenbank
-cursor.execute('CREATE TABLE messages (id INTEGER PRIMARY KEY, user_id INTEGER, content TEXT, timestamp INTEGER)')
-connection.commit()
-"""
 
 #Login des Bots mit Bestätigung in Konsole sowie Bereitmeldung im Support-Channel
 @bot.event
@@ -93,13 +83,13 @@ async def support(ctx):
         return problem
 
     async def request_support(ctx, thread):
-            role_id = support_id  # Replace ROLE_ID with the actual role ID to mention
-            role = ctx.guild.get_role(role_id)
-        
+            role = ctx.guild.get_role(support_id)
+            print(role)
             if role:
                 for member in role.members:
+                    print(member)
                     await thread.add_user(member)
-            await thread.send(f"Hey <@1115553886627971082>! {ctx.author} needs some help!")
+            await thread.send(f"Hey <@&1115553886627971082>! {ctx.author.mention} needs some help!")
             
     async def yes_or_no():
             await thread.send("Please only answer with Yes or No")
@@ -107,13 +97,16 @@ async def support(ctx):
         problem = await wait()
 
         #Keywordbasierte Antworten und Weiterleitung des Problems
+
         if 'internet' in problem:
             await thread.send("I see you are having problems with your internet. Have you tried restarting your router?")
             await yes_or_no()
             problem = await wait()
             if 'yes' in problem:
                 await thread.send("Sorry i can not help you anymore, i am requesting support!")
-                await request_support(ctx, thread)
+                await request_support(ctx, thread) # TODO FIx
+                
+                
             else:
                 await thread.send("Please restart your router and come back for help if you need any!")
                 
