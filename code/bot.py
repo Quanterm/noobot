@@ -5,7 +5,6 @@ import os
 from dotenv import load_dotenv
 import json 
 
-
 load_dotenv(dotenv_path='./env.env')
 Discord_TOKEN = os.getenv('DISCORD_TOKEN')
 Discord_TOKEN = str(Discord_TOKEN)
@@ -50,6 +49,8 @@ async def load_ticket_count():
         data = {'count': 1}
     return data['count']    
 
+
+
 @bot.command(name='support')
 async def support(ctx):
     ticket_number = await load_ticket_count()
@@ -62,12 +63,8 @@ async def support(ctx):
 
     def check(msg):
         # might change to "thread.channel"
-        return msg.author == ctx.author and msg.channel == ctx.channel
+        return msg.author == ctx.author and msg.channel == thread
 
-    # async def user_response():
-    #     user_response = await bot.wait_for('message', check=check, timeout=120)
-    #     problem = user_response.content.lower()
-    #     return problem
     try:
         # wait for the user, 2 minute timeout
         user_response = await bot.wait_for('message', check=check, timeout=120)
@@ -77,15 +74,18 @@ async def support(ctx):
 
         # scan the user´s input for keywords and give out possible solutions
         if 'internet' in problem:
-            await ctx.send("I see you are having problems with your internet. Have you tried restarting your router?")
+            await thread.send("I see you are having problems with your internet. Have you tried restarting your router?")
         elif 'printer' in problem:
-            await ctx.send("Make sure the printer is turned on and properly connected to your computer.")
+            await thread.send("Make sure the printer is turned on and properly connected to your computer.")
         elif 'email' in problem:
-            await ctx.send("Check your email settings and ensure you have a stable internet connection.")
+            await thread.send("Check your email settings and ensure you have a stable internet connection.")
         elif 'headset' in problem:
-            await ctx.send("I see you are having problems with your headset. If it is a USB Headset, check if it is connected to your computer or your dockingstation. If it is a bluetooth headset, check if it is connected and charged (sounds of the headset and lights are good indicators!)")
+            await thread.send("I see you are having problems with your headset. If it is a USB Headset, check if it is connected to your computer or your dockingstation. If it is a bluetooth headset, check if it is connected and charged (sounds of the headset and lights are good indicators!)")
         else:
-            await ctx.send("I'm sorry, I'm not sure how to help with that problem.")
+            await thread.send("I'm sorry, I'm not sure how to help with that problem. I'll get human help!")
+            await thread.send("<@&1115553886627971082>")
+
+
 
     except asyncio.TimeoutError:
         await ctx.send("You took too long to respond...")
