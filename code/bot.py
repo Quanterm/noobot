@@ -4,8 +4,32 @@ import asyncio
 import os
 from dotenv import load_dotenv
 import json 
+import sqlite3
 
-#Versteckte Variaben, die man nicht öffentlich im Code zu sehen haben will...
+conn = sqlite3.connect('chat_database.db')
+c = conn.cursor()
+c.execute('''CREATE TABLE IF NOT EXISTS logs
+             (id INTEGER PRIMARY KEY AUTOINCREMENT,
+             ticket_name TEXT,
+             user_name TEXT,
+             problem_message TEXT)''')
+
+async def insert_data(ticket_name, user_name, problem_message):
+    c.execute("INSERT INTO logs (ticket_name, user_name, problem_message) VALUES (?, ?, ?)",
+              (ticket_name, user_name, problem_message))
+    conn.commit()
+
+async def retrieve_data():
+    c.execute("SELECT ticket_name, user_name, problem_message FROM logs")
+    data = c.fetchall()
+    print(data)
+    return data
+async def retrieve_ticket(ticket):
+    c.execute(f"SELECT ticket_name, user_name, problem_message FROM logs WHERE ticket_name LIKE '{str(ticket)}'")
+    data = c.fetchall()
+    print(data)
+    return data
+# Versteckte Variaben, die man nicht öffentlich im Code zu sehen haben will...
 load_dotenv(dotenv_path='./env.env')
 Discord_TOKEN = os.getenv('DISCORD_TOKEN')
 Discord_TOKEN = str(Discord_TOKEN)
@@ -15,14 +39,14 @@ channel = os.getenv("CHANNEL")
 json_path = os.getenv("JSON_PATH")
 support_id = os.getenv("SUPPORT_ID")
 
-#Rechte für den Bot
+# Rechte für den Bot
 intents = discord.Intents.all()
 intents.message_content = True
 intents.members = True
 intents.messages = True 
 bot = commands.Bot(command_prefix='!', intents = intents, privileged_intents=True)
 
-#Login des Bots mit Bestätigung in Konsole sowie Bereitmeldung im Support-Channel
+# Login des Bots mit Bestätigung in Konsole sowie Bereitmeldung im Support-Channel
 @bot.event
 async def on_ready():
     print(f"Logged in as {bot.user}!")
@@ -58,49 +82,75 @@ async def load_ticket_count():
 # Bot-Kommando zum auslösen des Chatbots
 @bot.command(name='support')
 async def support(ctx):
+    # thread erstellen und ticketnummer als Threadname nutzen/ticketnummer abspeichern
     ticket_number = await load_ticket_count()
-    
     thread = await ctx.channel.create_thread(name=f'Ticket {ticket_number}')
-    await thread.send(f'How can I help you, {ctx.author.mention}? State your problem please.')
-    
+    await thread.send(f'How can I help you, {ctx.author.mention}? Please state your problem as precise as possible!')
     ticket_number += 1
     await save_ticket_count(ticket_number)
+
     # check ob die geschickten Nachrichten auch die Nachrichten vom Kommando-Auslöser im Thread kommen und nicht vom Bot selbst
     def check(msg):
         return msg.author == ctx.author and msg.channel == thread
-    # ausführen von check() 
+    # ausführen von check()
     async def wait():
         user_response = await bot.wait_for('message', check=check, timeout=600)
         problem = user_response.content.lower()
         return problem
 
-    async def request_support():
-            await thread.send(f"Hey <@&1115553886627971082> ! {ctx.author.mention} needs some help!")
 
     async def closing_thread():
-            await thread.send("No response...Closing Ticket. Open a new one if needed!")
+            await thread.send("No response...closing Ticket. Open a new one if needed!")
             await thread.edit(archived=True, locked=True)
 
-     #Keywordbasierte Antworten und Weiterleitung des Problems
+     # Keywordbasierte Antworten und Weiterleitung des Problems
     try:
         problem = ""
-
+        async def get_thread_name(thread):
+            thread_name = thread.name
+            return thread_name
+        ticket_name = str(await get_thread_name(thread))
+        async def extract_ticket_number(ticket_string):
+            parts = ticket_string.split()
+            last_part = parts[-1]
+            number = ''.join(filter(str.isdigit, last_part))
+            return number
+        ticket_number = await extract_ticket_number(ticket_name)
+        
+        async def support_information():
+            information_list = await retrieve_ticket(ticket_name)
+            await thread.send(f"Here are the relevant information for you, Supporter: \n{information_list[0][0]}\nUser: {information_list[0][1]}\nProblem: {information_list[0][2]}")
+        
+        async def request_support():
+            await thread.send(f"Hey <@&1115553886627971082> ! {ctx.author.mention} needs some help!")
+            await support_information()
         async def autoresolve():
                 problem = await wait()
                 if problem != None:
-                    await thread.send("It seems like you still have some issues...I will call some help")
-                    await request_support()
+                    async def autoresolve_yes_or_no():
+                        await thread.send("It seems like you still have some issues...Do you need Human Support?\nPlease only answer with Yes or No")
+                        problem = await wait()
+                        if 'yes' in problem:
+                            await request_support()
+                        elif 'no' in problem:
+                            await thread.send("Alright! Closing ticket!")
+                            await closing_thread()
+                        else:
+                            await thread.send("Please only answer with yes or no...")
+                            await autoresolve_yes_or_no()
                 else:
                     await thread.send("The issue seems to be solved, I will close the ticket")
                     await closing_thread()  
-
+                    
+        # QA für User
         async def internet():
             await thread.send("I see you are having problems with your internet. Have you tried restarting your router?")
             await thread.send("Please only answer with Yes or No")
             problem = await wait()
             if 'yes' in problem:
                 await thread.send("Sorry i can not help you anymore. I am requesting support!")
-                await request_support()                    
+                await request_support() 
+                await retrieve_ticket(ticket_name)                   
             elif 'no' in problem:
                 await thread.send("Please restart your router and come back for help if you need any!")
                 await autoresolve()
@@ -133,7 +183,7 @@ async def support(ctx):
             else:
                 await thread.send("It seems like i can not help you here, I am calling for support!")
                 await request_support()
-
+        
         async def email():
             await thread.send("I see you are having issues with emailing")
             await thread.send("Do you have issues with sending emails (type 1) or with your Outlook client (type 2)?")
@@ -205,6 +255,18 @@ async def support(ctx):
                 await headset()
         async def chatbot():
             problem = await wait()
+            async for message in thread.history(limit=1):
+                problem_message = str(message.content)
+            
+
+            print(problem_message)
+            print("a")
+            print(ctx.author)
+            print("a")
+            print(ticket_name)
+            author_name = str(ctx.author)
+            await insert_data(ticket_name, author_name, problem_message)
+            await retrieve_data()
             if 'internet' in problem:
                 await internet()
             elif 'wifi' in problem:
@@ -219,7 +281,7 @@ async def support(ctx):
                 await headset()
             else:
                 await thread.send("I have not found any keywords, are one of those topics relevant to your problem? Respond with the respective numbers only please")
-                await thread.send("1. internet/wifi\n2. printer/printing\n3. email/emailing\n4. headset\n5. Call human support")
+                await thread.send("1. Internet/Wifi\n2. Printer/Printing\n3. Email/Emailing\n4. Headset\n5. Call human support")
                 problem = await wait()
                 if '1' in problem:
                     await internet()
@@ -235,6 +297,6 @@ async def support(ctx):
         await chatbot()
 
     except asyncio.TimeoutError:
-        await ctx.send("You took too long to respond...I will close this ticket")
+        await thread.send("You took too long to respond... I will close this ticket and you should open a new one")
         await closing_thread()
 bot.run(Discord_TOKEN)
