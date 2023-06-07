@@ -1,9 +1,9 @@
 # A simple Discord bot for Technical Support
 This Bot does 1st level support for technial issues. 
-The bot has presettet solutions which shown as numbers where the user giving the number in to the anwser. 
-If it does not help it will answer with the databank information if there any.
-When it does not find the solution for the user it willa redirect the user to a human technial supporter.
-The bot collects the data from the chat of them for the next common issue.
+The bot searches for keywords in the problem message of the user.
+The bot has preset solutions which are shown as numbers where the user is giving the number in to the anwser if no keywords are found. 
+
+When it does not find the solution for the user it will redirect the user to a human technial supporter and give the supporter useful information from the database.
 
 ## System Requirments
 - Debian GNU/Linux (11 Bullseye)
