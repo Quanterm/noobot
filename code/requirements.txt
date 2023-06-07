@@ -1,5 +1,6 @@
 discord
 asyncio
 load_dotenv
-json5
+json
+sqlite3
 
