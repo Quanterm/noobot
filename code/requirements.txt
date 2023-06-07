@@ -1,0 +1,5 @@
+discord
+asyncio
+load_dotenv
+json5
+

@@ -171,25 +171,10 @@ async def support(ctx):
             await thread.send("Do you have a Bluetooth-Headset (type 1) or an USB-Headset (type 2)")
             problem = await wait()
             if '1' in problem:
-                async def bluetooth_yes_or_no():
-                    await thread.send("Do you have problems connecting your Headset to your pc?")
-                    await thread.send("Please only answer with Yes or No")
-                    problem = await wait()
-                    if 'yes' in problem:
-                        await thread.send("I will request some support to help with your headset issues")
-                        await request_support()
-                    elif 'no' in problem:
-                        await thread.send("please connect your headset to your pc")
-                        await autoresolve()
-                    else:
-                        await thread.send("You did not answer with yes or no...try again!")       
-                        await bluetooth_yes_or_no()   
-                await bluetooth_yes_or_no()                 
+                await thread.send("Do you have problems connecting your Headset to your pc?")
             elif '2' in problem:
                 async def usb_yes_or_no():
                     await thread.send("Is your Headset connected to your pc?")
-                    await thread.send("Please only answer with Yes or No")
-                    problem = await wait()
                     if 'yes' in problem:
                         await thread.send("I will request some support to help with your headset issues")
                         await request_support()
@@ -201,8 +186,6 @@ async def support(ctx):
                         await usb_yes_or_no()
                 await usb_yes_or_no()  
             else:
-                await thread.send("You did not answer with yes or no, try again")
-                await headset()
         async def chatbot():
             problem = await wait()
             if 'internet' in problem:
@@ -213,6 +196,7 @@ async def support(ctx):
                 await printer()
             elif 'printing' in problem:
                 await printer()
+
             elif 'email' in problem:
                 await email()
             elif 'headset' in problem:
@@ -238,3 +222,4 @@ async def support(ctx):
         await ctx.send("You took too long to respond...I will close this ticket")
         await closing_thread()
 bot.run(Discord_TOKEN)
+
