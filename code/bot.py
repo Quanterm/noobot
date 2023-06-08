@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 import json 
 import sqlite3
 
+# Datenbank erstellen
 conn = sqlite3.connect('chat_database.db')
 c = conn.cursor()
 c.execute('''CREATE TABLE IF NOT EXISTS logs
@@ -13,21 +14,20 @@ c.execute('''CREATE TABLE IF NOT EXISTS logs
              ticket_name TEXT,
              user_name TEXT,
              problem_message TEXT)''')
-
+# Funktion zum füllen der Datenbank mit Informationen
 async def insert_data(ticket_name, user_name, problem_message):
     c.execute("INSERT INTO logs (ticket_name, user_name, problem_message) VALUES (?, ?, ?)",
               (ticket_name, user_name, problem_message))
     conn.commit()
-
+# Beispielfunktion um alle Daten der Datenbank zu ziehen
 async def retrieve_data():
     c.execute("SELECT ticket_name, user_name, problem_message FROM logs")
     data = c.fetchall()
-    print(data)
     return data
+# Funktion zum ziehen der Informationen eines Tickets
 async def retrieve_ticket(ticket):
     c.execute(f"SELECT ticket_name, user_name, problem_message FROM logs WHERE ticket_name LIKE '{str(ticket)}'")
     data = c.fetchall()
-    print(data)
     return data
 # Versteckte Variaben, die man nicht öffentlich im Code zu sehen haben will...
 load_dotenv(dotenv_path='./env.env')
@@ -60,7 +60,7 @@ async def on_ready():
     print(f'{bot.user} is connected to the following guild:\n'
         f'{guild.name}(id: {guild.id})')
     achannel = bot.get_channel(int(channel))
-    await achannel.send("Hello I am ready to Support! UwU")
+    await achannel.send("Heyy! Use !support to get technical help c:")
     
 # Speichert die Ticketnummer in einer .json Datei um die aktuellste Ticketnummer auch bei einem Crash zu behalten
 async def save_ticket_count(count):
@@ -98,37 +98,41 @@ async def support(ctx):
         problem = user_response.content.lower()
         return problem
 
-
+    # selbsterklärend...
     async def closing_thread():
             await thread.send("No response...closing Ticket. Open a new one if needed!")
             await thread.edit(archived=True, locked=True)
 
-     # Keywordbasierte Antworten und Weiterleitung des Problems
+     # Keywordbasierte Antworten und Weiterleitung des Problems an menschlichen Support
     try:
         problem = ""
+        # Rausziehen und Filtern der Ticketnummer um sie im SQL Select zu nutzen
         async def get_thread_name(thread):
             thread_name = thread.name
             return thread_name
         ticket_name = str(await get_thread_name(thread))
+        # filtern der Nummer aus dem Ticket. Beispiel "Ticket 20" wird zu "20"
         async def extract_ticket_number(ticket_string):
             parts = ticket_string.split()
             last_part = parts[-1]
             number = ''.join(filter(str.isdigit, last_part))
             return number
         ticket_number = await extract_ticket_number(ticket_name)
-        
+
+        # nutzen des SQL selects um die Support-Informationen im Thread zu senden
         async def support_information():
             information_list = await retrieve_ticket(ticket_name)
             await thread.send(f"Here are the relevant information for you, Supporter: \n{information_list[0][0]}\nUser: {information_list[0][1]}\nProblem: {information_list[0][2]}")
-        
+        # funktion zum hinzufügen der "Supportrolle" in den Thread
         async def request_support():
             await thread.send(f"Hey <@&1115553886627971082> ! {ctx.author.mention} needs some help!")
             await support_information()
+        # Auf Antwort des Kunden warten oder Ticket automatisch schließen lassen nach 10min (except case)
         async def autoresolve():
                 problem = await wait()
                 if problem != None:
                     async def autoresolve_yes_or_no():
-                        await thread.send("It seems like you still have some issues...Do you need Human Support?\nPlease only answer with Yes or No")
+                        await thread.send("Do you need Human Support?\nPlease only answer with Yes or No, I will close the ticket if you dont need any more support")
                         problem = await wait()
                         if 'yes' in problem:
                             await request_support()
@@ -137,12 +141,12 @@ async def support(ctx):
                             await closing_thread()
                         else:
                             await thread.send("Please only answer with yes or no...")
-                            await autoresolve_yes_or_no()
+                    await autoresolve_yes_or_no()
                 else:
                     await thread.send("The issue seems to be solved, I will close the ticket")
                     await closing_thread()  
                     
-        # QA für User
+        # Die verschiedenen Fragen und Antworten getrennt in Internet/Drucker/Email und Headset
         async def internet():
             await thread.send("I see you are having problems with your internet. Have you tried restarting your router?")
             await thread.send("Please only answer with Yes or No")
@@ -253,20 +257,18 @@ async def support(ctx):
             else:
                 await thread.send("You did not answer with yes or no, try again")
                 await headset()
+                
         async def chatbot():
             problem = await wait()
+            
+            # Daten in die Datenbank eingeben
             async for message in thread.history(limit=1):
                 problem_message = str(message.content)
-            
-
-            print(problem_message)
-            print("a")
-            print(ctx.author)
-            print("a")
-            print(ticket_name)
             author_name = str(ctx.author)
             await insert_data(ticket_name, author_name, problem_message)
             await retrieve_data()
+
+             # ausführen der Fragen und Antworten
             if 'internet' in problem:
                 await internet()
             elif 'wifi' in problem:
@@ -279,7 +281,7 @@ async def support(ctx):
                 await email()
             elif 'headset' in problem:
                 await headset()
-            else:
+            else: # Falls der Bot keine Keywords findet, den Nutzer nach relevanten Keywords fragen oder Menschlichen Support rufen
                 await thread.send("I have not found any keywords, are one of those topics relevant to your problem? Respond with the respective numbers only please")
                 await thread.send("1. Internet/Wifi\n2. Printer/Printing\n3. Email/Emailing\n4. Headset\n5. Call human support")
                 problem = await wait()
